@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'stocks_list_page.dart';
+import '../components/stocks_list_ component.dart';
 
 class Newstockscreen extends StatefulWidget {
   const Newstockscreen({super.key});
@@ -39,7 +39,7 @@ class _NewstockscreenState extends State<Newstockscreen> {
         ),
       ),
       body: DefaultTabController(
-        length: 3, // 탭의 수
+        length: 3,
         child: Column(
           children: [
             Padding(
