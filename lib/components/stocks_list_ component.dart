@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import '../services/stock_service.dart';
 
 class StocksListPage extends StatefulWidget {
   const StocksListPage({super.key});
@@ -11,53 +10,43 @@ class StocksListPage extends StatefulWidget {
 
 class StocksListPageState extends State<StocksListPage>
     with AutomaticKeepAliveClientMixin {
-  List<dynamic> stocks = []; // 주식 데이터를 담을 리스트
-  bool isLoading = true; // 로딩 상태를 나타내는 변수
+  final StockService stockService =
+      StockService(); // StockService 인스턴스 생성 (API 호출 전담)
+  List<dynamic> stocks = []; // 주식 데이터를 저장할 리스트
+  bool isLoading = true; // 데이터 로딩 상태를 나타내는 변수
 
   @override
   void initState() {
     super.initState();
-    fetchStocks(); // 페이지가 초기화되면 주식 데이터를 가져옴
+    loadStocks(); // 페이지 초기화 시 주식 데이터를 로드
   }
 
-  // API로부터 주식 목록을 가져오는 함수
-  Future<void> fetchStocks() async {
-    const String apiUrl =
-        "https://financialmodelingprep.com/api/v3/stock/list?apikey=GRIGh6O4mE0k2QyZ5tqO7p3izVYytXWV";
-
-    // HTTP GET 요청을 통해 주식 목록을 API에서 가져옴
-    var response = await http.get(Uri.parse(apiUrl));
-
-    // API 요청 성공 시
-    if (response.statusCode == 200) {
-      var jsonData = json.decode(response.body); // 응답 본문을 JSON으로 디코딩
+  // 주식 데이터를 비동기 방식으로 API에서 가져오는 함수
+  Future<void> loadStocks() async {
+    try {
+      // StockService를 통해 API 호출, 데이터 로드
+      List<dynamic> data = await stockService.fetchStocks();
       setState(() {
-        stocks = jsonData; // 주식 데이터를 리스트에 저장
-        isLoading = false; // 로딩 상태 해제
+        stocks = data; // API에서 받아온 데이터를 stocks 리스트에 저장
+        isLoading = false; // 데이터를 불러오면 로딩 상태 해제
       });
-    } else {
-      // API 요청 실패 시
+    } catch (e) {
+      // 데이터 로딩 실패 시에도 로딩 상태를 false로 변경
       setState(() {
-        isLoading = false; // 로딩 상태 해제
+        isLoading = false;
       });
-      throw Exception('Failed to load stocks'); // 오류 발생
     }
   }
 
-  // AutomaticKeepAliveClientMixin을 통해 상태 유지
-  @override
-  bool get wantKeepAlive => true;
-
   @override
   Widget build(BuildContext context) {
-    super.build(context); // AutomaticKeepAliveClientMixin 사용 시 필요
+    super.build(context); // AutomaticKeepAliveClientMixin을 사용하는 경우 호출 필요
     return isLoading
-        ? const Center(
-            child: CircularProgressIndicator(), // 로딩 중일 때 표시되는 인디케이터
-          )
+        ? const Center(child: CircularProgressIndicator()) // 로딩 중일 때 표시
         : ListView.builder(
-            itemCount: stocks.length, // 주식 데이터 수에 따라 목록의 항목 개수를 설정
-            itemBuilder: (BuildContext context, int index) {
+            itemCount: stocks.length,
+            itemBuilder: (context, index) {
+              // 주식 리스트 표시
               return Padding(
                 padding:
                     const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
@@ -90,4 +79,7 @@ class StocksListPageState extends State<StocksListPage>
             },
           );
   }
+
+  @override
+  bool get wantKeepAlive => true; // 상태가 유지되도록 설정 (탭 간 이동 시 데이터 유지)
 }
